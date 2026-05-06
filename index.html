@@ -1,0 +1,1564 @@
+// ============================================================
+// SMARTKIDS GUARDIAN AI - APPLICATION COMPLÈTE
+// Version: 2.0.0 | Kotlin | Firebase | Claude AI
+// ============================================================
+
+// ===== build.gradle (APP LEVEL) =====
+/*
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'com.google.gms.google-services'
+    id 'dagger.hilt.android.plugin'
+}
+
+android {
+    compileSdk 34
+    namespace "com.smartkids.guardian"
+    defaultConfig {
+        applicationId "com.smartkids.guardian"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+        multiDexEnabled true
+    }
+    buildFeatures { viewBinding true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
+    implementation 'com.google.android.gms:play-services-maps:18.2.0'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    implementation 'androidx.room:room-runtime:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    kapt 'androidx.room:room-compiler:2.6.1'
+    implementation 'com.google.dagger:hilt-android:2.50'
+    kapt 'com.google.dagger:hilt-compiler:2.50'
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.work:work-runtime-ktx:2.9.0'
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+}
+*/
+
+// ===== AndroidManifest.xml =====
+/*
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <application
+        android:name=".SmartKidsApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="SmartKids Guardian"
+        android:theme="@style/Theme.SmartKids"
+        android:usesCleartextTraffic="false">
+
+        <activity android:name=".SplashActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".LoginActivity" android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".RegisterActivity" android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ParentDashboardActivity" android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ChildHomeActivity" android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".SOSActivity" android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"/>
+
+        <service android:name=".LocationTrackingService"
+            android:foregroundServiceType="location"
+            android:exported="false"/>
+
+        <service android:name=".SmartKidsFCMService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+
+        <receiver android:name=".SystemEventReceiver" android:exported="true">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.ACTION_SHUTDOWN"/>
+                <action android:name="android.intent.action.BATTERY_LOW"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+        </receiver>
+
+        <meta-data android:name="com.google.android.geo.API_KEY"
+            android:value="VOTRE_GOOGLE_MAPS_API_KEY"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="smartkids_alerts"/>
+    </application>
+</manifest>
+*/
+
+// ============================================================
+// PACKAGE PRINCIPAL
+// ============================================================
+
+package com.smartkids.guardian
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.*
+import android.content.*
+import android.content.pm.PackageManager
+import android.graphics.Color
+import android.location.Geocoder
+import android.media.*
+import android.net.Uri
+import android.os.*
+import android.view.*
+import android.widget.*
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.*
+import androidx.room.*
+import com.google.android.gms.location.*
+import com.google.android.gms.maps.*
+import com.google.android.gms.maps.model.*
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.*
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
+import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.TimeUnit
+
+// ============================================================
+// ===== SECTION 1: MODÈLES DE DONNÉES =====
+// ============================================================
+
+data class UserModel(
+    val uid: String = "",
+    val email: String = "",
+    val name: String = "",
+    val phone: String = "",
+    val role: String = "parent",
+    val fcmToken: String = "",
+    val children: List<String> = emptyList()
+)
+
+data class ChildModel(
+    val id: String = "",
+    val name: String = "",
+    val age: Int = 0,
+    val parentId: String = "",
+    val isOnline: Boolean = false,
+    val batteryLevel: Int = 100,
+    val currentLocation: LocationModel? = null,
+    val lastKnownPosition: LocationModel? = null,
+    val lastSeen: Long = 0L,
+    val phoneOff: Boolean = false,
+    val sosActive: Boolean = false,
+    val parentFcmToken: String = ""
+)
+
+data class LocationModel(
+    val id: String = "",
+    val childId: String = "",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val accuracy: Float = 0f,
+    val speed: Float = 0f,
+    val address: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    val batteryLevel: Int = 100,
+    val isPhoneOff: Boolean = false
+)
+
+data class GeofenceModel(
+    val id: String = "",
+    val childId: String = "",
+    val name: String = "",
+    val type: String = "CUSTOM",
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val radius: Float = 200f,
+    val isActive: Boolean = true,
+    val alertOnEnter: Boolean = true,
+    val alertOnExit: Boolean = true
+)
+
+data class AlertModel(
+    val id: String = "",
+    val childId: String = "",
+    val childName: String = "",
+    val type: String = "INFO",
+    val message: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    val isRead: Boolean = false,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
+)
+
+data class ChatMessage(
+    val role: String = "user",
+    val content: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+// ============================================================
+// ===== SECTION 2: BASE DE DONNÉES ROOM =====
+// ============================================================
+
+@Entity(tableName = "locations")
+data class LocationEntity(
+    @PrimaryKey val id: String,
+    val childId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val address: String,
+    val timestamp: Long,
+    val batteryLevel: Int,
+    val synced: Boolean = false
+)
+
+@Dao
+interface LocationDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(location: LocationEntity)
+
+    @Query("SELECT * FROM locations WHERE childId = :childId ORDER BY timestamp DESC LIMIT 200")
+    suspend fun getByChild(childId: String): List<LocationEntity>
+
+    @Query("SELECT * FROM locations WHERE childId = :childId ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastLocation(childId: String): LocationEntity?
+
+    @Query("DELETE FROM locations WHERE timestamp < :before")
+    suspend fun deleteOlderThan(before: Long)
+}
+
+@Database(entities = [LocationEntity::class], version = 1, exportSchema = false)
+abstract class SmartKidsDatabase : RoomDatabase() {
+    abstract fun locationDao(): LocationDao
+    companion object {
+        @Volatile private var INSTANCE: SmartKidsDatabase? = null
+        fun getInstance(context: Context): SmartKidsDatabase =
+            INSTANCE ?: synchronized(this) {
+                Room.databaseBuilder(context, SmartKidsDatabase::class.java, "smartkids_db")
+                    .fallbackToDestructiveMigration().build().also { INSTANCE = it }
+            }
+    }
+}
+
+// ============================================================
+// ===== SECTION 3: PRÉFÉRENCES SÉCURISÉES =====
+// ============================================================
+
+class PrefsManager(context: Context) {
+    private val prefs = context.getSharedPreferences("smartkids_prefs", Context.MODE_PRIVATE)
+
+    var userId: String?
+        get() = prefs.getString("user_id", null)
+        set(v) = prefs.edit().putString("user_id", v).apply()
+
+    var childId: String?
+        get() = prefs.getString("child_id", null)
+        set(v) = prefs.edit().putString("child_id", v).apply()
+
+    var userRole: String
+        get() = prefs.getString("user_role", "parent") ?: "parent"
+        set(v) = prefs.edit().putString("user_role", v).apply()
+
+    var trackingInterval: Long
+        get() = prefs.getLong("tracking_interval", 30_000L)
+        set(v) = prefs.edit().putLong("tracking_interval", v).apply()
+
+    var isTracking: Boolean
+        get() = prefs.getBoolean("is_tracking", false)
+        set(v) = prefs.edit().putBoolean("is_tracking", v).apply()
+
+    var selectedChildId: String?
+        get() = prefs.getString("selected_child_id", null)
+        set(v) = prefs.edit().putString("selected_child_id", v).apply()
+
+    var parentName: String?
+        get() = prefs.getString("parent_name", null)
+        set(v) = prefs.edit().putString("parent_name", v).apply()
+
+    var fcmToken: String?
+        get() = prefs.getString("fcm_token", null)
+        set(v) = prefs.edit().putString("fcm_token", v).apply()
+
+    fun clear() = prefs.edit().clear().apply()
+}
+
+// ============================================================
+// ===== SECTION 4: REPOSITORY FIREBASE =====
+// ============================================================
+
+class FirebaseRepository(private val context: Context) {
+    val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    val prefs = PrefsManager(context)
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // ===== AUTHENTIFICATION =====
+
+    suspend fun loginWithEmail(email: String, password: String): Result<UserModel> {
+        return try {
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            val uid = result.user?.uid ?: throw Exception("Connexion échouée")
+            val user = getUserById(uid) ?: throw Exception("Utilisateur introuvable")
+            prefs.userId = uid
+            prefs.userRole = user.role
+            prefs.parentName = user.name
+            updateFcmToken(uid)
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun registerParent(
+        email: String, password: String, name: String, phone: String
+    ): Result<UserModel> {
+        return try {
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            val uid = result.user?.uid ?: throw Exception("Inscription échouée")
+            val token = getToken()
+            val user = UserModel(
+                uid = uid, email = email, name = name,
+                phone = phone, role = "parent", fcmToken = token
+            )
+            db.collection("users").document(uid).set(user).await()
+            prefs.userId = uid
+            prefs.userRole = "parent"
+            prefs.parentName = name
+            prefs.fcmToken = token
+            Result.success(user)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun registerChild(
+        email: String, password: String, name: String,
+        age: Int, parentId: String
+    ): Result<ChildModel> {
+        return try {
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            val uid = result.user?.uid ?: throw Exception("Échec")
+            val token = getToken()
+            val child = ChildModel(
+                id = uid, name = name, age = age,
+                parentId = parentId, parentFcmToken = prefs.fcmToken ?: ""
+            )
+            db.collection("children").document(uid).set(child).await()
+            db.collection("users").document(uid).set(
+                UserModel(uid = uid, email = email, name = name, role = "child", fcmToken = token)
+            ).await()
+            db.collection("users").document(parentId)
+                .update("children", FieldValue.arrayUnion(uid)).await()
+            Result.success(child)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun logout() {
+        auth.signOut()
+        prefs.clear()
+    }
+
+    // ===== UTILISATEURS =====
+
+    suspend fun getUserById(uid: String): UserModel? = try {
+        db.collection("users").document(uid).get().await().toObject(UserModel::class.java)
+    } catch (e: Exception) { null }
+
+    private suspend fun updateFcmToken(uid: String) {
+        try {
+            val token = getToken()
+            db.collection("users").document(uid).update("fcmToken", token).await()
+            prefs.fcmToken = token
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    private suspend fun getToken(): String = try {
+        FirebaseMessaging.getInstance().token.await()
+    } catch (e: Exception) { "" }
+
+    // ===== ENFANTS =====
+
+    fun observeChildren(parentId: String, onResult: (List<ChildModel>) -> Unit): ListenerRegistration {
+        return db.collection("children")
+            .whereEqualTo("parentId", parentId)
+            .addSnapshotListener { snap, _ ->
+                val list = snap?.documents?.mapNotNull {
+                    it.toObject(ChildModel::class.java)
+                } ?: emptyList()
+                onResult(list)
+            }
+    }
+
+    fun observeChild(childId: String, onResult: (ChildModel?) -> Unit): ListenerRegistration {
+        return db.collection("children").document(childId)
+            .addSnapshotListener { snap, _ ->
+                onResult(snap?.toObject(ChildModel::class.java))
+            }
+    }
+
+    suspend fun addChild(parentId: String, name: String, age: Int): Result<ChildModel> {
+        return try {
+            val childId = UUID.randomUUID().toString()
+            val child = ChildModel(
+                id = childId, name = name, age = age,
+                parentId = parentId, parentFcmToken = prefs.fcmToken ?: ""
+            )
+            db.collection("children").document(childId).set(child).await()
+            db.collection("users").document(parentId)
+                .update("children", FieldValue.arrayUnion(childId)).await()
+            Result.success(child)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteChild(childId: String, parentId: String): Result<Unit> {
+        return try {
+            db.collection("children").document(childId).delete().await()
+            db.collection("users").document(parentId)
+                .update("children", FieldValue.arrayRemove(childId)).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ===== LOCALISATION =====
+
+    suspend fun saveLocation(location: LocationModel): Result<Unit> {
+        return try {
+            val locId = location.id.ifEmpty { UUID.randomUUID().toString() }
+            val loc = location.copy(id = locId)
+            db.collection("locations").document(locId).set(loc).await()
+            db.collection("children").document(location.childId).update(
+                mapOf(
+                    "currentLocation" to loc,
+                    "lastKnownPosition" to loc,
+                    "lastSeen" to System.currentTimeMillis(),
+                    "batteryLevel" to location.batteryLevel,
+                    "isOnline" to true,
+                    "phoneOff" to false
+                )
+            ).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun markPhoneOff(childId: String, lastLocation: LocationModel?) {
+        try {
+            val updates = mutableMapOf<String, Any>(
+                "isOnline" to false,
+                "phoneOff" to true,
+                "lastSeen" to System.currentTimeMillis()
+            )
+            lastLocation?.let { updates["lastKnownPosition"] = it }
+            db.collection("children").document(childId).update(updates).await()
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    suspend fun markSOS(childId: String, location: LocationModel): Result<Unit> {
+        return try {
+            db.collection("children").document(childId)
+                .update("sosActive", true).await()
+            val alert = AlertModel(
+                id = UUID.randomUUID().toString(),
+                childId = childId,
+                type = "SOS",
+                message = "🆘 ALERTE SOS! Enfant en danger!",
+                latitude = location.latitude,
+                longitude = location.longitude,
+                timestamp = System.currentTimeMillis()
+            )
+            db.collection("alerts").document(alert.id).set(alert).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun clearSOS(childId: String) {
+        try {
+            db.collection("children").document(childId)
+                .update("sosActive", false).await()
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    // ===== HISTORIQUE =====
+
+    suspend fun getLocationHistory(childId: String, limit: Int = 100): List<LocationModel> {
+        return try {
+            db.collection("locations")
+                .whereEqualTo("childId", childId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .get().await()
+                .documents.mapNotNull { it.toObject(LocationModel::class.java) }
+        } catch (e: Exception) { emptyList() }
+    }
+
+    // ===== GEOFENCES =====
+
+    suspend fun saveGeofence(geofence: GeofenceModel): Result<Unit> {
+        return try {
+            val gId = geofence.id.ifEmpty { UUID.randomUUID().toString() }
+            db.collection("geofences").document(gId).set(geofence.copy(id = gId)).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getGeofences(childId: String): List<GeofenceModel> {
+        return try {
+            db.collection("geofences")
+                .whereEqualTo("childId", childId)
+                .get().await()
+                .documents.mapNotNull { it.toObject(GeofenceModel::class.java) }
+        } catch (e: Exception) { emptyList() }
+    }
+
+    suspend fun deleteGeofence(geofenceId: String): Result<Unit> {
+        return try {
+            db.collection("geofences").document(geofenceId).delete().await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ===== ALERTES =====
+
+    fun observeAlerts(parentId: String, onResult: (List<AlertModel>) -> Unit): ListenerRegistration {
+        return db.collection("alerts")
+            .whereEqualTo("parentId", parentId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(50)
+            .addSnapshotListener { snap, _ ->
+                val list = snap?.documents?.mapNotNull {
+                    it.toObject(AlertModel::class.java)
+                } ?: emptyList()
+                onResult(list)
+            }
+    }
+
+    suspend fun saveAlert(alert: AlertModel): Result<Unit> {
+        return try {
+            db.collection("alerts").document(alert.id).set(alert).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
+
+// ============================================================
+// ===== SECTION 5: GESTIONNAIRE D'ALERTES SONORES =====
+// ============================================================
+
+class AlertSoundManager(private val context: Context) {
+
+    private var mediaPlayer: MediaPlayer? = null
+    private var ringtone: Ringtone? = null
+    private var vibrator: Vibrator? = null
+    private var isPlayingSOS = false
+
+    companion object {
+        val SOS_VIBRATION = longArrayOf(0, 500, 200, 500, 200, 500, 1000, 1000, 200, 1000, 200, 1000, 1000)
+        val WARNING_VIBRATION = longArrayOf(0, 300, 200, 300)
+        val NOTIFICATION_VIBRATION = longArrayOf(0, 200, 100, 200)
+    }
+
+    @Suppress("DEPRECATION")
+    private val vibratorService: Vibrator by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vm.defaultVibrator
+        } else {
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+    }
+
+    // ===== 🆘 ALARME SOS - Son maximal =====
+    fun playSOSAlarm() {
+        if (isPlayingSOS) return
+        isPlayingSOS = true
+
+        try {
+            stopAll()
+
+            // Monter le volume au maximum
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            audioManager.setStreamVolume(
+                AudioManager.STREAM_ALARM,
+                audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM),
+                0
+            )
+
+            // Utiliser la sonnerie d'alarme du système
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            ringtone = RingtoneManager.getRingtone(context, alarmUri)?.apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    isLooping = true
+                }
+                audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                play()
+            }
+
+            // Vibration SOS (... --- ...)
+            vibratePattern(SOS_VIBRATION, 0)
+
+        } catch (e: Exception) {
+            playFallbackSOSSound()
+        }
+    }
+
+    // ===== 🔋 Son Batterie Faible =====
+    fun playBatteryLowSound() {
+        try {
+            stopAll()
+            val notifUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            ringtone = RingtoneManager.getRingtone(context, notifUri)?.apply { play() }
+            vibratePattern(WARNING_VIBRATION, -1)
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    // ===== 📵 Son Téléphone Éteint =====
+    fun playPhoneOffSound() {
+        try {
+            stopAll()
+            val notifUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            ringtone = RingtoneManager.getRingtone(context, notifUri)?.apply { play() }
+            vibratePattern(WARNING_VIBRATION, -1)
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    // ===== 🚪 Son Geofence =====
+    fun playGeofenceAlert() {
+        try {
+            val notifUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            ringtone = RingtoneManager.getRingtone(context, notifUri)?.apply { play() }
+            vibratePattern(NOTIFICATION_VIBRATION, -1)
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    // ===== Son de secours si ringtone échoue =====
+    private fun playFallbackSOSSound() {
+        try {
+            mediaPlayer = MediaPlayer().apply {
+                val afd = context.assets.openFd("sos_alarm.mp3")
+                setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                afd.close()
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .build()
+                )
+                isLooping = true
+                prepare()
+                start()
+            }
+        } catch (e: Exception) {
+            // Générer un bip synthétique
+            playBeepTone()
+        }
+    }
+
+    // ===== Bip de secours =====
+    private fun playBeepTone() {
+        try {
+            val toneGen = ToneGenerator(AudioManager.STREAM_ALARM, 100)
+            val handler = Handler(Looper.getMainLooper())
+            var count = 0
+            val runnable = object : Runnable {
+                override fun run() {
+                    if (isPlayingSOS && count < 30) {
+                        toneGen.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500)
+                        count++
+                        handler.postDelayed(this, 700)
+                    } else {
+                        toneGen.release()
+                    }
+                }
+            }
+            handler.post(runnable)
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    private fun vibratePattern(pattern: LongArray, repeat: Int) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibratorService.vibrate(VibrationEffect.createWaveform(pattern, repeat))
+            } else {
+                @Suppress("DEPRECATION")
+                vibratorService.vibrate(pattern, repeat)
+            }
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    fun stopAll() {
+        isPlayingSOS = false
+        try {
+            ringtone?.stop()
+            ringtone = null
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+            vibratorService.cancel()
+        } catch (e: Exception) { /* ignore */ }
+    }
+}
+
+// ============================================================
+// ===== SECTION 6: SERVICE DE TRACKING =====
+// ============================================================
+
+class LocationTrackingService : Service() {
+
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var repository: FirebaseRepository
+    private lateinit var prefs: PrefsManager
+    private lateinit var geocoder: Geocoder
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var lastBattery = 100
+    private var locationCallback: LocationCallback? = null
+
+    override fun onCreate() {
+        super.onCreate()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        repository = FirebaseRepository(this)
+        prefs = PrefsManager(this)
+        geocoder = Geocoder(this, Locale.getDefault())
+        createNotificationChannel()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val notif = buildForegroundNotification()
+        startForeground(1001, notif)
+        startTracking()
+        return START_STICKY
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startTracking() {
+        val interval = prefs.trackingInterval
+
+        val request = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY, interval
+        ).apply {
+            setMinUpdateIntervalMillis(interval / 2)
+            setMaxUpdateDelayMillis(interval * 2)
+        }.build()
+
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let { loc ->
+                    serviceScope.launch {
+                        processLocation(loc)
+                    }
+                }
+            }
+        }
+
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                request, locationCallback!!, Looper.getMainLooper()
+            )
+            prefs.isTracking = true
+        } catch (e: SecurityException) {
+            stopSelf()
+        }
+    }
+
+    private suspend fun processLocation(location: android.location.Location) {
+        val childId = prefs.childId ?: return
+        val battery = getBatteryLevel()
+        val address = getAddress(location.latitude, location.longitude)
+
+        // Alerte batterie faible
+        if (battery <= 20 && lastBattery > 20) {
+            sendBatteryAlert(childId, battery, location)
+        }
+        lastBattery = battery
+
+        val locationModel = LocationModel(
+            id = UUID.randomUUID().toString(),
+            childId = childId,
+            latitude = location.latitude,
+            longitude = location.longitude,
+            accuracy = location.accuracy,
+            speed = location.speed,
+            address = address,
+            timestamp = System.currentTimeMillis(),
+            batteryLevel = battery
+        )
+
+        repository.saveLocation(locationModel)
+        checkGeofences(locationModel)
+    }
+
+    private suspend fun checkGeofences(location: LocationModel) {
+        val childId = prefs.childId ?: return
+        val zones = repository.getGeofences(childId)
+        zones.forEach { zone ->
+            if (!zone.isActive) return@forEach
+            val distance = calculateDistance(
+                location.latitude, location.longitude,
+                zone.latitude, zone.longitude
+            )
+            val inZone = distance <= zone.radius
+            // Alerte si sortie
+            if (!inZone && zone.alertOnExit) {
+                sendGeofenceAlert(childId, zone, "EXIT", location)
+            }
+        }
+    }
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val result = FloatArray(1)
+        android.location.Location.distanceBetween(lat1, lon1, lat2, lon2, result)
+        return result[0]
+    }
+
+    private suspend fun sendBatteryAlert(childId: String, battery: Int, loc: android.location.Location) {
+        val alert = AlertModel(
+            id = UUID.randomUUID().toString(),
+            childId = childId,
+            type = "BATTERY_LOW",
+            message = "🔋 Batterie faible: $battery%",
+            latitude = loc.latitude,
+            longitude = loc.longitude,
+            timestamp = System.currentTimeMillis()
+        )
+        repository.saveAlert(alert)
+    }
+
+    private suspend fun sendGeofenceAlert(
+        childId: String, zone: GeofenceModel,
+        event: String, location: LocationModel
+    ) {
+        val msg = if (event == "EXIT")
+            "🚪 ${prefs.parentName ?: "Votre enfant"} a quitté la zone: ${zone.name}"
+        else
+            "✅ ${prefs.parentName ?: "Votre enfant"} est entré dans: ${zone.name}"
+
+        val alert = AlertModel(
+            id = UUID.randomUUID().toString(),
+            childId = childId,
+            type = "GEOFENCE_ $ event",
+            message = msg,
+            latitude = location.latitude,
+            longitude = location.longitude,
+            timestamp = System.currentTimeMillis()
+        )
+        repository.saveAlert(alert)
+    }
+
+    private fun getAddress(lat: Double, lon: Double): String {
+        return try {
+            val addresses = geocoder.getFromLocation(lat, lon, 1)
+            if (!addresses.isNullOrEmpty()) {
+                addresses[0].getAddressLine(0) ?: " $ lat,  $ lon"
+            } else " $ lat,  $ lon"
+        } catch (e: Exception) { " $ lat, $lon" }
+    }
+
+    private fun getBatteryLevel(): Int {
+        val intent = registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+        return if (level != -1 && scale != -1) (level * 100 / scale) else 100
+    }
+
+    private fun createNotificationChannel() {
+        val channel = NotificationChannel(
+            "tracking_service", "Suivi actif", NotificationManager.IMPORTANCE_LOW
+        )
+        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    }
+
+    private fun buildForegroundNotification(): Notification {
+        val intent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, ChildHomeActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, "tracking_service")
+            .setContentTitle("SmartKids Guardian")
+            .setContentText("🛡️ Protection active")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setContentIntent(intent)
+            .setOngoing(true)
+            .build()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationCallback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        serviceScope.cancel()
+        prefs.isTracking = false
+    }
+
+    override fun onBind(intent: Intent?) = null
+}
+
+// ============================================================
+// ===== SECTION 7: RECEIVER ÉVÉNEMENTS SYSTÈME =====
+// ============================================================
+
+class SystemEventReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val prefs = PrefsManager(context)
+        val childId = prefs.childId ?: return
+
+        when (intent.action) {
+            Intent.ACTION_SHUTDOWN -> {
+                handleShutdown(context, childId, prefs)
+            }
+            Intent.ACTION_BATTERY_LOW -> {
+                handleBatteryLow(context, childId)
+            }
+            Intent.ACTION_BOOT_COMPLETED -> {
+                handleBoot(context, prefs)
+            }
+        }
+    }
+
+    private fun handleShutdown(context: Context, childId: String, prefs: PrefsManager) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val repo = FirebaseRepository(context)
+            val db = SmartKidsDatabase.getInstance(context)
+            val lastLoc = db.locationDao().getLastLocation(childId)
+            val locModel = lastLoc?.let {
+                LocationModel(
+                    childId = childId,
+                    latitude = it.latitude,
+                    longitude = it.longitude,
+                    address = it.address,
+                    timestamp = System.currentTimeMillis(),
+                    isPhoneOff = true
+                )
+            }
+            repo.markPhoneOff(childId, locModel)
+
+            val alert = AlertModel(
+                id = UUID.randomUUID().toString(),
+                childId = childId,
+                type = "PHONE_OFF",
+                message = "📵 Téléphone éteint. Dernière position enregistrée.",
+                latitude = locModel?.latitude ?: 0.0,
+                longitude = locModel?.longitude ?: 0.0,
+                timestamp = System.currentTimeMillis()
+            )
+            repo.saveAlert(alert)
+        }
+    }
+
+    private fun handleBatteryLow(context: Context, childId: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val repo = FirebaseRepository(context)
+            val alert = AlertModel(
+                id = UUID.randomUUID().toString(),
+                childId = childId,
+                type = "BATTERY_LOW",
+                message = "🔋 Batterie très faible!",
+                timestamp = System.currentTimeMillis()
+            )
+            repo.saveAlert(alert)
+        }
+    }
+
+    private fun handleBoot(context: Context, prefs: PrefsManager) {
+        if (prefs.userRole == "child" && prefs.childId != null) {
+            val intent = Intent(context, LocationTrackingService::class.java)
+            ContextCompat.startForegroundService(context, intent)
+        }
+    }
+}
+
+// ============================================================
+// ===== SECTION 8: SERVICE FCM NOTIFICATIONS =====
+// ============================================================
+
+class SmartKidsFCMService : FirebaseMessagingService() {
+    private lateinit var soundManager: AlertSoundManager
+
+    override fun onCreate() {
+        super.onCreate()
+        soundManager = AlertSoundManager(this)
+    }
+
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        val prefs = PrefsManager(this)
+        prefs.fcmToken = token
+        val uid = prefs.userId ?: return
+        FirebaseFirestore.getInstance().collection("users").document(uid)
+            .update("fcmToken", token)
+    }
+
+    override fun onMessageReceived(message: RemoteMessage) {
+        super.onMessageReceived(message)
+        val type = message.data["type"] ?: "INFO"
+        val title = message.notification?.title ?: getTitleForType(type)
+        val body = message.notification?.body ?: message.data["message"] ?: ""
+
+        // Jouer le son approprié
+        when (type) {
+            "SOS" -> soundManager.playSOSAlarm()
+            "PHONE_OFF" -> soundManager.playPhoneOffSound()
+            "BATTERY_LOW" -> soundManager.playBatteryLowSound()
+            "GEOFENCE_EXIT" -> soundManager.playGeofenceAlert()
+        }
+
+        sendNotification(type, title, body, message.data)
+    }
+
+    private fun getTitleForType(type: String) = when (type) {
+        "SOS" -> "🆘 ALERTE SOS!"
+        "PHONE_OFF" -> "📵 Téléphone éteint"
+        "BATTERY_LOW" -> "🔋 Batterie faible"
+        "GEOFENCE_EXIT" -> "🚪 Sortie de zone"
+        "GEOFENCE_ENTER" -> "✅ Entrée dans zone"
+        else -> "SmartKids Guardian"
+    }
+
+    private fun sendNotification(
+        type: String, title: String, body: String, data: Map<String, String>
+    ) {
+        val intent = Intent(this, ParentDashboardActivity::class.java).apply {
+            putExtra("notification_type", type)
+            putExtra("child_id", data["childId"])
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pi = PendingIntent.getActivity(
+            this, System.currentTimeMillis().toInt(), intent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val channelId = when (type) {
+            "SOS" -> "smartkids_sos"
+            "PHONE_OFF", "BATTERY_LOW" -> "smartkids_alerts"
+            else -> "smartkids_geofence"
+        }
+
+        val notif = NotificationCompat.Builder(this, channelId)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(
+                if (type == "SOS") NotificationCompat.PRIORITY_MAX
+                else NotificationCompat.PRIORITY_HIGH
+            )
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setVibrate(
+                if (type == "SOS") AlertSoundManager.SOS_VIBRATION
+                else AlertSoundManager.NOTIFICATION_VIBRATION
+            )
+            .setFullScreenIntent(pi, type == "SOS")
+            .build()
+
+        getSystemService(NotificationManager::class.java)
+            .notify(System.currentTimeMillis().toInt(), notif)
+    }
+}
+
+// ============================================================
+// ===== SECTION 9: MODULE IA - CLAUDE API =====
+// ============================================================
+
+class ClaudeAIManager(private val context: Context) {
+    private val CLAUDE_API_KEY = "VOTRE_CLÉ_API_CLAUDE_ICI"
+    private val CLAUDE_URL = "https://api.anthropic.com/v1/messages"
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
+
+    // ===== Analyser comportement enfant =====
+    suspend fun analyzeChildBehavior(
+        childName: String,
+        locations: List<LocationModel>,
+        geofences: List<GeofenceModel>
+    ): String = withContext(Dispatchers.IO) {
+        val locationsSummary = locations.take(20).joinToString("\n") {
+            val time = SimpleDateFormat("HH:mm", Locale.getDefault())
+                .format(Date(it.timestamp))
+            "- $time: ${it.address} (vitesse: ${it.speed} m/s)"
+        }
+
+        val prompt = """
+            Analyse les déplacements de l'enfant $childName:
+            
+            Positions récentes:
+            $locationsSummary
+            
+            Zones sécurisées: ${geofences.joinToString(", ") { "${it.name} (${it.type})" }}
+            
+            Fais une analyse brève en français:
+            1. Résumé de l'activité (1-2 phrases)
+            2. Comportements inhabituels? (oui/non + explication)
+            3. Recommandation pour le parent (1 phrase)
+            
+            Sois concis et rassurant.
+        """.trimIndent()
+
+        return@withContext callClaude(prompt, "parent")
+    }
+
+    // ===== Chat avec l'enfant =====
+    suspend fun chatWithChild(
+        childName: String,
+        userMessage: String,
+        chatHistory: List<ChatMessage>
+    ): String = withContext(Dispatchers.IO) {
+        val systemPrompt = """
+            Tu es un assistant bienveillant qui aide $childName, un enfant.
+            - Utilise un langage simple et amical
+            - Si l'enfant dit qu'il est perdu, dis-lui de rester calme et d'appuyer sur SOS
+            - Si l'enfant est en danger, conseille-lui d'appeler ses parents
+            - Donne des conseils de sécurité simples
+            - Réponds toujours en français
+            - Maximum 2-3 phrases courtes
+        """.trimIndent()
+
+        val messages = buildMessagesArray(chatHistory, userMessage)
+        return@withContext callClaudeWithSystem(systemPrompt, messages)
+    }
+
+    // ===== Chat avec le parent =====
+    suspend fun chatWithParent(
+        userMessage: String,
+        childrenData: List<ChildModel>,
+        chatHistory: List<ChatMessage>
+    ): String = withContext(Dispatchers.IO) {
+        val childrenInfo = childrenData.joinToString("\n") { child ->
+            val status = if (child.isOnline) "en ligne" else "hors ligne"
+            val loc = child.currentLocation?.address ?: child.lastKnownPosition?.address ?: "inconnue"
+            "- ${child.name}: $status, batterie ${child.batteryLevel}%, position: $loc"
+        }
+
+        val systemPrompt = """
+            Tu es l'assistant IA de SmartKids Guardian, une app de surveillance parentale.
+            
+            Données actuelles des enfants:
+            $childrenInfo
+            
+            Aide le parent avec:
+            - Questions sur la sécurité de ses enfants
+            - Conseils sur les paramètres de l'application
+            - Analyses de comportement
+            - Conseils de sécurité
+            
+            Réponds en français, sois précis et rassurant.
+        """.trimIndent()
+
+        val messages = buildMessagesArray(chatHistory, userMessage)
+        return@withContext callClaudeWithSystem(systemPrompt, messages)
+    }
+
+    // ===== Détection zone dangereuse =====
+    suspend fun analyzeDangerZone(address: String, time: String): String =
+        withContext(Dispatchers.IO) {
+            val prompt = """
+                Un enfant se trouve à: $address à $time.
+                Est-ce une zone/heure potentiellement risquée?
+                Réponds en 1-2 phrases courtes en français.
+                Si risque, dis "⚠️ Attention" sinon "✅ OK".
+            """.trimIndent()
+
+            return@withContext callClaude(prompt, "parent")
+        }
+
+    // ===== Appel API Claude =====
+    private fun callClaude(prompt: String, role: String): String {
+        return try {
+            val body = JSONObject().apply {
+                put("model", "claude-opus-4-5")
+                put("max_tokens", 500)
+                put("messages", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("role", "user")
+                        put("content", prompt)
+                    })
+                })
+            }
+
+            val request = Request.Builder()
+                .url(CLAUDE_URL)
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .header("x-api-key", CLAUDE_API_KEY)
+                .header("anthropic-version", "2023-06-01")
+                .header("content-type", "application/json")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "{}")
+                    json.getJSONArray("content").getJSONObject(0).getString("text")
+                } else {
+                    "Désolé, je suis temporairement indisponible."
+                }
+            }
+        } catch (e: Exception) {
+            "Erreur de connexion à l'IA."
+        }
+    }
+
+    private fun callClaudeWithSystem(system: String, messages: JSONArray): String {
+        return try {
+            val body = JSONObject().apply {
+                put("model", "claude-opus-4-5")
+                put("max_tokens", 600)
+                put("system", system)
+                put("messages", messages)
+            }
+
+            val request = Request.Builder()
+                .url(CLAUDE_URL)
+                .post(body.toString().toRequestBody("application/json".toMediaType()))
+                .header("x-api-key", CLAUDE_API_KEY)
+                .header("anthropic-version", "2023-06-01")
+                .header("content-type", "application/json")
+                .build()
+
+            client.newCall(request).execute().use { response ->
+                if (response.isSuccessful) {
+                    val json = JSONObject(response.body?.string() ?: "{}")
+                    json.getJSONArray("content").getJSONObject(0).getString("text")
+                } else {
+                    "Je suis temporairement indisponible."
+                }
+            }
+        } catch (e: Exception) {
+            "Erreur de connexion."
+        }
+    }
+
+    private fun buildMessagesArray(history: List<ChatMessage>, newMessage: String): JSONArray {
+        return JSONArray().apply {
+            history.takeLast(10).forEach { msg ->
+                put(JSONObject().apply {
+                    put("role", msg.role)
+                    put("content", msg.content)
+                })
+            }
+            put(JSONObject().apply {
+                put("role", "user")
+                put("content", newMessage)
+            })
+        }
+    }
+}
+
+// ============================================================
+// ===== SECTION 10: APPLICATION =====
+// ============================================================
+
+class SmartKidsApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        createAllNotificationChannels()
+    }
+
+    private fun createAllNotificationChannels() {
+        val manager = getSystemService(NotificationManager::class.java)
+        listOf(
+            NotificationChannel("smartkids_sos", "🆘 SOS Urgence",
+                NotificationManager.IMPORTANCE_HIGH).apply {
+                enableVibration(true)
+                vibrationPattern = AlertSoundManager.SOS_VIBRATION
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            },
+            NotificationChannel("smartkids_alerts", "⚠️ Alertes",
+                NotificationManager.IMPORTANCE_HIGH).apply {
+                enableVibration(true)
+            },
+            NotificationChannel("smartkids_geofence", "📍 Zones",
+                NotificationManager.IMPORTANCE_DEFAULT),
+            NotificationChannel("tracking_service", "📡 Tracking",
+                NotificationManager.IMPORTANCE_LOW)
+        ).forEach { manager.createNotificationChannel(it) }
+    }
+}
+
+// ============================================================
+// ===== SECTION 11: SPLASH ACTIVITY =====
+// ============================================================
+
+@SuppressLint("CustomSplashScreen")
+class SplashActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#1565C0"))
+        }
+
+        val emoji = TextView(this).apply {
+            text = "🛡️"
+            textSize = 80f
+            gravity = Gravity.CENTER
+        }
+
+        val title = TextView(this).apply {
+            text = "SmartKids Guardian"
+            textSize = 26f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(0, 32, 0, 8)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+
+        val subtitle = TextView(this).apply {
+            text = "Protection intelligente de vos enfants"
+            textSize = 14f
+            setTextColor(Color.parseColor("#90CAF9"))
+            gravity = Gravity.CENTER
+        }
+
+        val progress = ProgressBar(this).apply {
+            indeterminateTintList = android.content.res.ColorStateList
+                .valueOf(Color.parseColor("#4CAF50"))
+        }
+
+        layout.addView(emoji)
+        layout.addView(title)
+        layout.addView(subtitle)
+        layout.addView(progress, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, 100).apply { topMargin = 60 }
+        )
+        setContentView(layout)
+
+        val prefs = PrefsManager(this)
+        val auth = FirebaseAuth.getInstance()
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            val dest = when {
+                auth.currentUser == null -> LoginActivity::class.java
+                prefs.userRole == "child" -> ChildHomeActivity::class.java
+                else -> ParentDashboardActivity::class.java
+            }
+            startActivity(Intent(this, dest))
+            finish()
+        }, 2000)
+    }
+}
+
+// ============================================================
+// ===== SECTION 12: LOGIN ACTIVITY =====
+// ============================================================
+
+class LoginActivity : AppCompatActivity() {
+    private lateinit var repository: FirebaseRepository
+    private lateinit var prefs: PrefsManager
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        repository = FirebaseRepository(this)
+        prefs = PrefsManager(this)
+
+        val scroll = android.widget.ScrollView(this)
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(64, 100, 64, 64)
+            setBackgroundColor(Color.WHITE)
+        }
+
+        // ===== LOGO =====
+        val logo = TextView(this).apply {
+            text = "🛡️\nSmartKids Guardian"
+            textSize = 22f
+            gravity = Gravity.CENTER
+            setTextColor(Color.parseColor("#1565C0"))
+            setPadding(0, 0, 0, 60)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+
+        // ===== EMAIL =====
+        val etEmail = TextInputEditText(this).apply {
+            hint = "Email"
+            inputType = android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS or
+                    android.text.InputType.TYPE_CLASS_TEXT
+        }
+
+        // ===== MOT DE PASSE =====
+        val etPassword = TextInputEditText(this).apply {
+            hint = "Mot de passe"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+
+        // ===== BOUTON CONNEXION =====
+        val btnLogin = MaterialButton(this).apply {
+            text = "🔐 Se connecter"
+            setBackgroundColor(Color.parseColor("#1565C0"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 150
+            ).apply { topMargin = 40 }
+        }
+
+        // ===== BOUTON INSCRIPTION =====
+        val btnRegister = MaterialButton(this).apply {
+            text = "📝 Créer un compte parent"
+            setBackgroundColor(Color.parseColor("#4CAF50"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 150
+            ).apply { topMargin = 16 }
+        }
+
+        // ===== SÉPARATEUR =====
+        val tvOr = TextView(this).apply {
+            text = "── ou ──"
+            gravity = Gravity.CENTER
+            setTextColor(Color.GRAY)
+            setPadding(0, 20, 0, 20)
+        }
+
+        // ===== MODE ENFANT =====
+        val btnChildMode = MaterialButton(this).apply {
+            text = "👶 Mode Enfant (connexion enfant)"
+            setBackgroundColor(Color.parseColor("#FF9800"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 150
+            ).apply { topMargin = 8 }
+        }
+
+        val progressBar = ProgressBar(this).apply {
+            visibility = View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = 20 }
+        }
+
+        // ===== ACTIONS =====
+        btnLogin.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+            val password = etPassword.text.toString()
+            if (email.isEmpty() || password.isEmpty()) {
+                toast("Veuillez remplir tous les champs")
+                return@setOnClickListener
+            }
+            progressBar.visibility = View.VISIBLE
+            btnLogin.isEnabled = false
+
+            lifecycleScope.launch {
+                val result = repository.loginWithEmail(email, password)
+                progressBar.visibility = View.GONE
+                btnLogin.isEnabled = true
+                result.onSuccess { user ->
+                    val dest = if (user.role == "child") ChildHomeActivity::class.java
+                               else ParentDashboardActivity::class.java
+                    startActivity(Intent(this@LoginActivity, dest))
+                    finish()
+                }.onFailure { e ->
+                    toast("❌ ${e.message}")
+                }
+            }
+        }
+
+        btnRegister.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
+
+        btnChildMode.setOnClickListener {
+            showChildLoginDialog()
+        }
+
+        layout.addView(logo)
+        layout.addView(etEmail)
+        layout.addView(etPassword)
+        layout.addView(progressBar)
+        layout.addView(btnLogin)
+        layout.addView(tvOr)
+        layout.addView(btnRegister)
+        layout.addView(btnChildMode)
+
+        scroll.addView(layout)
+        setContentView(scroll)
+    }
+
+    private fun showChildLoginDialog() {
+        val dialogLayout = LinearLayout(this).
