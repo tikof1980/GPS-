@@ -9,7 +9,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
     body { background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; padding: 20px; color: #333; }
     .container { max-width: 600px; margin: auto; }
-    h1 { color: white; text-align: center; margin-bottom: 5px; }
+    h1 { color: white; text-align: center; margin-bottom: 5px; font-size: 28px; }
     .subtitle { color: white; text-align: center; margin-bottom: 30px; opacity: 0.9; }
     .card { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     .card h2 { margin-bottom: 15px; color: #444; }
@@ -17,121 +17,321 @@
     button { width: 100%; padding: 14px; margin-bottom: 10px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; background: #667eea; color: white; transition: 0.2s; }
     button:hover { transform: translateY(-2px); }
     .sos { background: #e74c3c; font-size: 18px; }
-    #status, #childInfo { margin-top: 15px; padding: 12px; background: #f4f4f4; border-radius: 8px; font-size: 14px; }
+    .mic-btn { background: #27ae60; }
+    .mic-btn.active { background: #e74c3c; animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { transform: scale(1.02); opacity: 0.9; } }
+    #status, #childInfo, #aiLog { margin-top: 15px; padding: 12px; background: #f4f4f4; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+    #aiLog { background: #1a1a2e; color: #00ff88; font-family: monospace; max-height: 200px; overflow-y: auto; }
     .alert { background: #e74c3c !important; color: white; animation: blink 0.5s infinite; }
     @keyframes blink { 50% { opacity: 0.6; } }
-    a { color: inherit; font-weight: bold; }
+    .danger-words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .word-tag { background: #ffe0e0; color: #c0392b; padding: 5px 10px; border-radius: 20px; font-size: 13px; }
+    .safe-tag { background: #e0ffe0; color: #27ae60; padding: 5px 10px; border-radius: 20px; font-size: 13px; }
+    .level { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+    .level-1 { background: #fff3cd; color: #856404; }
+    .level-2 { background: #f8d7da; color: #842029; }
+    a { color: #667eea; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🛡️ SafeChild AI</h1>
-    <p class="subtitle">Sécurité de votre enfant en temps réel</p>
+<div class="container">
+  <h1>🛡️ SafeChild AI</h1>
+  <p class="subtitle">Protection intelligente de votre enfant</p>
 
-    <div class="card">
-      <h2>👧 Mode Enfant</h2>
-      <input type="text" id="childName" placeholder="Nom de l'enfant" />
-      <button id="startTracking">📍 Activer le suivi</button>
-      <button id="sosButton" class="sos">🚨 SOS URGENCE</button>
-      <p id="status">En attente...</p>
-    </div>
+  <!-- MODE ENFANT -->
+  <div class="card">
+    <h2>👧 Mode Enfant</h2>
+    <input type="text" id="childName" placeholder="Prénom de l'enfant" />
+    
+    <button id="startTracking">📍 Activer le suivi GPS</button>
+    <button id="micButton" class="mic-btn">🎤 Activer l'écoute IA</button>
+    <button id="sosButton" class="sos">🚨 SOS URGENCE</button>
+    
+    <p id="status">En attente...</p>
+    
+    <div id="aiLog">🤖 IA prête... En attente d'activation.</div>
+  </div>
 
-    <div class="card">
-      <h2>👨‍👩‍👧 Mode Parent</h2>
-      <input type="text" id="watchName" placeholder="Nom de l'enfant à suivre" />
-      <button id="watchChild">👁️ Suivre cet enfant</button>
-      <div id="childInfo"></div>
+  <!-- MOTS SURVEILLÉS -->
+  <div class="card">
+    <h2>🔍 Mots surveillés par l'IA</h2>
+    <p style="font-size:13px; color:#666; margin-bottom:10px;">L'IA déclenche une alerte si elle entend :</p>
+    <div class="danger-words">
+      <span class="word-tag">au secours</span>
+      <span class="word-tag">aide moi</span>
+      <span class="word-tag">lâche moi</span>
+      <span class="word-tag">arrête</span>
+      <span class="word-tag">non non non</span>
+      <span class="word-tag">j'ai peur</span>
+      <span class="word-tag">il me fait mal</span>
+      <span class="word-tag">je veux ma maman</span>
+      <span class="word-tag">laisse moi</span>
+      <span class="word-tag">je veux rentrer</span>
+      <span class="word-tag">help</span>
+      <span class="word-tag">à l'aide</span>
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  <!-- MODE PARENT -->
+  <div class="card">
+    <h2>👨‍👩‍👧 Mode Parent</h2>
+    <input type="text" id="watchName" placeholder="Prénom de l'enfant à suivre" />
+    <button id="watchChild">👁️ Surveiller en temps réel</button>
+    <div id="childInfo"></div>
+  </div>
+</div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_gTW7kcGL6lLGcjDHENLAY4ixKXSiZ88",
-      authDomain: "safechild-7fe11.firebaseapp.com",
-      databaseURL: "https://safechild-7fe11-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "safechild-7fe11",
-      storageBucket: "safechild-7fe11.firebasestorage.app",
-      messagingSenderId: "730535391209",
-      appId: "1:730535391209:web:8425961acfd7c2a68b2578"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  // 🔥 VOS CLÉS FIREBASE
+  const firebaseConfig = {
+    apiKey: "VOTRE_API_KEY",
+    authDomain: "VOTRE_PROJECT.firebaseapp.com",
+    databaseURL: "https://VOTRE_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "VOTRE_PROJECT",
+    storageBucket: "VOTRE_PROJECT.appspot.com",
+    messagingSenderId: "VOTRE_ID",
+    appId: "VOTRE_APP_ID"
+  };
 
-    const status = document.getElementById("status");
-    const childInfo = document.getElementById("childInfo");
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    document.getElementById("startTracking").onclick = () => {
-      const name = document.getElementById("childName").value.trim();
-      if (!name) return alert("Entrez un nom !");
-      if (!navigator.geolocation) return alert("Géolocalisation non supportée");
+  const status = document.getElementById("status");
+  const childInfo = document.getElementById("childInfo");
+  const aiLog = document.getElementById("aiLog");
+  const micButton = document.getElementById("micButton");
 
-      status.textContent = "📡 Suivi activé...";
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          const data = {
-            name,
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            timestamp: new Date().toISOString(),
-            sos: false
-          };
-          set(ref(db, "children/" + name), data);
-          status.textContent = `✅ Position envoyée : ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-        },
-        (err) => { status.textContent = "❌ Erreur : " + err.message; },
-        { enableHighAccuracy: true }
-      );
-    };
+  // ==========================================
+  // 🗣️ SYNTHÈSE VOCALE — L'IA parle à l'enfant
+  // ==========================================
+  function parlerEnfant(texte) {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(texte);
+    utterance.lang = "fr-FR";
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    synth.speak(utterance);
+  }
 
-    document.getElementById("sosButton").onclick = () => {
-      const name = document.getElementById("childName").value.trim();
-      if (!name) return alert("Entrez un nom et activez le suivi d'abord !");
+  // ==========================================
+  // 📝 LOG IA
+  // ==========================================
+  function logIA(message) {
+    const time = new Date().toLocaleTimeString('fr-FR');
+    aiLog.innerHTML += `\n[${time}] ${message}`;
+    aiLog.scrollTop = aiLog.scrollHeight;
+  }
+
+  // ==========================================
+  // 🔍 MOTS DANGEREUX
+  // ==========================================
+  const motsDanger = [
+    { mot: "au secours", niveau: 2 },
+    { mot: "aide moi", niveau: 2 },
+    { mot: "à l'aide", niveau: 2 },
+    { mot: "help", niveau: 2 },
+    { mot: "lâche moi", niveau: 2 },
+    { mot: "laisse moi", niveau: 1 },
+    { mot: "arrête", niveau: 1 },
+    { mot: "non non", niveau: 1 },
+    { mot: "j'ai peur", niveau: 2 },
+    { mot: "il me fait mal", niveau: 2 },
+    { mot: "je veux ma maman", niveau: 2 },
+    { mot: "je veux rentrer", niveau: 1 },
+  ];
+
+  // ==========================================
+  // 🚨 DÉCLENCHER ALERTE IA
+  // ==========================================
+  function declencherAlerteIA(motDetecte, niveau, nom) {
+    logIA(`🚨 MOT DÉTECTÉ : "${motDetecte}" (niveau ${niveau})`);
+    
+    if (niveau === 2) {
+      // Alerte maximale
+      parlerEnfant(`${nom}, je suis là. Tu es en sécurité. Tes parents sont alertés. Reste calme.`);
+      
       navigator.geolocation.getCurrentPosition((pos) => {
-        set(ref(db, "children/" + name), {
-          name,
+        set(ref(db, "children/" + nom), {
+          name: nom,
           latitude: pos.coords.latitude,
           longitude: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
           timestamp: new Date().toISOString(),
-          sos: true
+          sos: true,
+          alerteIA: true,
+          motDetecte: motDetecte
         });
-        status.textContent = "🚨 ALERTE SOS ENVOYÉE !";
-        status.classList.add("alert");
       });
-    };
 
-    document.getElementById("watchChild").onclick = () => {
-      const name = document.getElementById("watchName").value.trim();
-      if (!name) return alert("Entrez le nom de l'enfant !");
+      status.textContent = `🚨 ALERTE IA : "${motDetecte}" détecté !`;
+      status.classList.add("alert");
 
-      onValue(ref(db, "children/" + name), (snapshot) => {
-        const data = snapshot.val();
-        if (!data) {
-          childInfo.textContent = "Aucune donnée pour cet enfant.";
-          return;
+    } else {
+      // Alerte niveau 1 — avertissement
+      parlerEnfant(`${nom}, tout va bien ? Je suis là si tu as besoin.`);
+      logIA(`⚠️ Avertissement niveau 1`);
+    }
+  }
+
+  // ==========================================
+  // 🎤 RECONNAISSANCE VOCALE IA
+  // ==========================================
+  let recognition = null;
+  let micActif = false;
+
+  micButton.onclick = () => {
+    const nom = document.getElementById("childName").value.trim();
+    if (!nom) return alert("Entrez d'abord le prénom de l'enfant !");
+
+    if (!micActif) {
+      // DÉMARRER l'écoute
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome.");
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = "fr-FR";
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        micActif = true;
+        micButton.textContent = "🔴 Écoute active — Cliquer pour arrêter";
+        micButton.classList.add("active");
+        logIA("🎤 Écoute démarrée...");
+        parlerEnfant(`Bonjour ${nom}. Je suis SafeChild, je veille sur toi.`);
+      };
+
+      recognition.onresult = (event) => {
+        let texteDetecte = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          texteDetecte += event.results[i][0].transcript.toLowerCase();
         }
-        const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
-        childInfo.innerHTML = `
-          <strong>Enfant :</strong> ${data.name}<br>
-          <strong>Position :</strong> ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}<br>
-          <strong>Précision :</strong> ${Math.round(data.accuracy)} m<br>
-          <strong>Heure :</strong> ${new Date(data.timestamp).toLocaleString('fr-FR')}<br>
-          <strong>État :</strong> ${data.sos ? "🚨 SOS ACTIVÉ !" : "✅ Normal"}<br>
-          <a href="${mapsLink}" target="_blank">📍 Voir sur Google Maps</a>
-        `;
-        if (data.sos) {
-          childInfo.classList.add("alert");
-          new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg").play().catch(()=>{});
-        } else {
-          childInfo.classList.remove("alert");
+        
+        if (texteDetecte.trim()) {
+          logIA(`👂 Entendu : "${texteDetecte}"`);
         }
+
+        // Vérifier les mots dangereux
+        for (const danger of motsDanger) {
+          if (texteDetecte.includes(danger.mot)) {
+            declencherAlerteIA(danger.mot, danger.niveau, nom);
+            break;
+          }
+        }
+      };
+
+      recognition.onerror = (e) => {
+        logIA(`❌ Erreur micro : ${e.error}`);
+      };
+
+      recognition.onend = () => {
+        // Redémarrer automatiquement si toujours actif
+        if (micActif) {
+          logIA("🔄 Redémarrage écoute...");
+          recognition.start();
+        }
+      };
+
+      recognition.start();
+
+    } else {
+      // ARRÊTER l'écoute
+      micActif = false;
+      recognition.stop();
+      micButton.textContent = "🎤 Activer l'écoute IA";
+      micButton.classList.remove("active");
+      logIA("⏹️ Écoute arrêtée.");
+    }
+  };
+
+  // ==========================================
+  // 📍 GPS
+  // ==========================================
+  document.getElementById("startTracking").onclick = () => {
+    const name = document.getElementById("childName").value.trim();
+    if (!name) return alert("Entrez le prénom !");
+
+    navigator.geolocation.watchPosition((pos) => {
+      const data = {
+        name,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        timestamp: new Date().toISOString(),
+        sos: false
+      };
+      set(ref(db, "children/" + name), data);
+      status.textContent = `✅ GPS actif : ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+    },
+    (err) => { status.textContent = "❌ GPS : " + err.message; },
+    { enableHighAccuracy: true });
+  };
+
+  // ==========================================
+  // 🚨 BOUTON SOS MANUEL
+  // ==========================================
+  document.getElementById("sosButton").onclick = () => {
+    const name = document.getElementById("childName").value.trim();
+    if (!name) return alert("Entrez le prénom !");
+    
+    navigator.geolocation.getCurrentPosition((pos) => {
+      set(ref(db, "children/" + name), {
+        name,
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        timestamp: new Date().toISOString(),
+        sos: true,
+        alerteIA: false,
+        motDetecte: "SOS MANUEL"
       });
-    };
-  </script>
+      status.textContent = "🚨 SOS ENVOYÉ !";
+      status.classList.add("alert");
+      parlerEnfant("Alerte envoyée. Tes parents arrivent. Reste où tu es.");
+    });
+  };
+
+  // ==========================================
+  // 👨‍👩‍👧 MODE PARENT
+  // ==========================================
+  document.getElementById("watchChild").onclick = () => {
+    const name = document.getElementById("watchName").value.trim();
+    if (!name) return alert("Entrez le prénom !");
+
+    onValue(ref(db, "children/" + name), (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        childInfo.textContent = "Aucune donnée pour cet enfant.";
+        return;
+      }
+
+      const mapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+      const alerteType = data.motDetecte ? `🗣️ Mot détecté : "${data.motDetecte}"` : "";
+      
+      childInfo.innerHTML = `
+        <strong>👧 Enfant :</strong> ${data.name}<br>
+        <strong>📍 Position :</strong> ${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}<br>
+        <strong>🎯 Précision :</strong> ${Math.round(data.accuracy)} m<br>
+        <strong>🕐 Heure :</strong> ${new Date(data.timestamp).toLocaleString('fr-FR')}<br>
+        <strong>📊 État :</strong> ${data.sos ? "🚨 ALERTE !" : "✅ Normal"}<br>
+        ${alerteType ? `<strong>⚠️ ${alerteType}</strong><br>` : ""}
+        <br><a href="${mapsLink}" target="_blank">📍 Voir sur Google Maps</a>
+      `;
+
+      if (data.sos) {
+        childInfo.classList.add("alert");
+        new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg").play().catch(()=>{});
+      } else {
+        childInfo.classList.remove("alert");
+      }
+    });
+  };
+</script>
 </body>
 </html>
